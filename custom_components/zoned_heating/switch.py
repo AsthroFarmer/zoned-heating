@@ -248,13 +248,7 @@ class ZonedHeaterSwitch(ToggleEntity, RestoreEntity):
         # `hvac_action` because some TRVs report `idle` even when in heat
         # mode due to their internal hysteresis.
         temperature_increase_per_state = []
-		
-		try:
-			hysteresis = float(self._hysteresis or 0)
-		except Exception:
-			hysteresis = float(const.DEFAULT_HYSTERESIS)
-		
-		for state in states:
+        for state in states:
             t = state.get(ATTR_TEMPERATURE)
             cur = state.get(ATTR_CURRENT_TEMPERATURE)
             if (
@@ -263,7 +257,7 @@ class ZonedHeaterSwitch(ToggleEntity, RestoreEntity):
                 state.get(ATTR_HVAC_MODE) != HVACMode.OFF
             ):
                 try:
-                    temperature_increase_per_state.append(float(t) - float(cur) + float(hysteresis))
+                    temperature_increase_per_state.append(float(t) - float(cur))
                 except Exception:
                     continue
 
@@ -273,6 +267,10 @@ class ZonedHeaterSwitch(ToggleEntity, RestoreEntity):
         if len(temperature_increase_per_state) and self._enabled:
             temperature_increase = round(max(temperature_increase_per_state), 1)
             # Only activate override when the required increase exceeds configured hysteresis
+            try:
+                hysteresis = float(self._hysteresis or 0)
+            except Exception:
+                hysteresis = float(const.DEFAULT_HYSTERESIS)
             override_active = temperature_increase > hysteresis
 
         if (not self._override_active and not override_active) or (
